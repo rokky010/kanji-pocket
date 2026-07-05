@@ -2,7 +2,8 @@
 // 漢字ポケット - アプリロジック
 // 保存は localStorage のみ（サーバー通信なし）
 
-const STORAGE_KEY = "kanjiPocket.progress.v1";
+const STORAGE_KEY = "kanjiPocket.progress.v1"; // 回答の正誤記録（ずっと残る）
+const SESSION_KEY = "kanjiPocket.session.v1";  // 「途中」の状態（再開用）
 
 /* ------------------------------------------------------------
    進捗データの読み書き
@@ -29,13 +30,46 @@ function saveProgress(progress) {
 let progress = loadProgress();
 
 /* ------------------------------------------------------------
+   セッション（途中経過）の読み書き
+   構造: { queueIds:[id,...], index:number, results:{id:grade}, roundKey }
+------------------------------------------------------------ */
+function loadSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    console.error("途中経過の読み込みに失敗しました", e);
+    return null;
+  }
+}
+
+function saveSession() {
+  try {
+    const session = {
+      queueIds: currentQueue.map(q => q.id),
+      index: currentIndex,
+      results: currentSessionResults,
+      roundKey: selectedRoundKey,
+      savedAt: Date.now(),
+    };
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  } catch (e) {
+    console.error("途中経過の保存に失敗しました", e);
+  }
+}
+
+function clearSession() {
+  localStorage.removeItem(SESSION_KEY);
+}
+
+/* ------------------------------------------------------------
    状態
 ------------------------------------------------------------ */
-let selectedRoundKey = "all";   // "all" または round番号
-let currentQueue = [];          // 出題中の配列（シャッフル済み questionオブジェクト）
+let selectedRoundKey = "all";      // "all" または round番号
+let currentQueue = [];             // 出題中の配列（question オブジェクトの配列）
 let currentIndex = 0;
-let currentSessionResults = []; // このセッションで付けた {id, grade} の記録
-let revealed = false;
+let currentSessionResults = {};    // このセッションで付けた { [id]: grade }
+let revealStage = 0;               // 0:何も見ていない 1:ヒント表示 2:こたえ表示
 
 /* ------------------------------------------------------------
    ユーティリティ
@@ -70,6 +104,18 @@ function showScreen(id) {
   document.getElementById(id).classList.remove("hidden");
 }
 
+function currentRoundLabelFor(q) {
+  const r = ROUNDS.find(r => r.round === q.round);
+  return r ? r.label : "";
+}
+
+function markStyle(g) {
+  if (g === "○") return "background:var(--good-bg);color:var(--good);";
+  if (g === "△") return "background:var(--mid-bg);color:var(--mid);";
+  if (g === "✕") return "background:var(--bad-bg);color:var(--bad);";
+  return "background:#EFEAE0;color:var(--ink-soft);";
+}
+
 /* ------------------------------------------------------------
    時計（ステータスバーの見た目用）
 ------------------------------------------------------------ */
@@ -88,13 +134,15 @@ setInterval(updateClock, 15000);
    ホーム画面
 ============================================================== */
 function renderHome() {
+  renderResumeBanner();
+
   const list = document.getElementById("round-list");
   list.innerHTML = "";
 
   ROUNDS.forEach(r => {
     const c = countByRound(r.round);
-    const first = QUESTIONS.find(q => q.round === r.round);
     const qs = QUESTIONS.filter(q => q.round === r.round);
+    const first = qs[0];
     const last = qs[qs.length - 1];
 
     const card = document.createElement("button");
@@ -138,6 +186,62 @@ function renderHome() {
   list.appendChild(allCard);
 }
 
+function renderResumeBanner() {
+  const banner = document.getElementById("resume-banner");
+  const session = loadSession();
+
+  if (!session || !session.queueIds || session.queueIds.length === 0) {
+    banner.classList.add("hidden");
+    return;
+  }
+
+  // 有効な問題IDがまだ存在するか確認
+  const validQueue = session.queueIds
+    .map(id => QUESTIONS.find(q => q.id === id))
+    .filter(Boolean);
+
+  if (validQueue.length === 0 || session.index >= validQueue.length) {
+    clearSession();
+    banner.classList.add("hidden");
+    return;
+  }
+
+  const roundsInQueue = [...new Set(validQueue.map(q => q.round))];
+  const label = roundsInQueue.length === 1
+    ? ROUNDS.find(r => r.round === roundsInQueue[0]).label
+    : "すべての回";
+
+  document.getElementById("resume-banner-title").textContent = "続きがあります";
+  document.getElementById("resume-banner-sub").textContent =
+    `${label}・${session.index + 1} / ${validQueue.length}問`;
+
+  banner.classList.remove("hidden");
+}
+
+document.getElementById("btn-resume").addEventListener("click", () => {
+  const session = loadSession();
+  if (!session) return;
+
+  const validQueue = session.queueIds
+    .map(id => QUESTIONS.find(q => q.id === id))
+    .filter(Boolean);
+
+  if (validQueue.length === 0) return;
+
+  currentQueue = validQueue;
+  currentIndex = Math.min(session.index, validQueue.length - 1);
+  currentSessionResults = session.results || {};
+  selectedRoundKey = session.roundKey || "all";
+
+  showScreen("screen-quiz");
+  renderCard();
+});
+
+document.getElementById("btn-resume-clear").addEventListener("click", () => {
+  clearSession();
+  renderResumeBanner();
+});
+
 document.getElementById("btn-start").addEventListener("click", () => {
   startQuiz(getQuestionsForKey(selectedRoundKey), true);
 });
@@ -152,18 +256,14 @@ document.getElementById("btn-review").addEventListener("click", () => {
 function startQuiz(questions, doShuffle) {
   currentQueue = doShuffle ? shuffle(questions) : questions.slice();
   currentIndex = 0;
-  currentSessionResults = [];
+  currentSessionResults = {};
+  saveSession();
   showScreen("screen-quiz");
   renderCard();
 }
 
-function currentRoundLabelFor(q) {
-  const r = ROUNDS.find(r => r.round === q.round);
-  return r ? r.label : "";
-}
-
 function renderCard() {
-  revealed = false;
+  revealStage = 0;
   const q = currentQueue[currentIndex];
 
   document.getElementById("card-kana").textContent = q.kana;
@@ -180,17 +280,37 @@ function renderCard() {
   const sentenceEl = document.getElementById("card-sentence");
   sentenceEl.innerHTML = `${before}<span class="blank">＿＿＿＿</span>${after}`;
 
-  // 答えエリアをリセット
+  // 答えエリアをリセット（ステージ0：ヒントを見るボタンのみ）
   const answerArea = document.getElementById("card-answer-area");
-  answerArea.innerHTML = `<button class="btn btn-reveal" id="btn-reveal">こたえを見る</button>`;
-  document.getElementById("btn-reveal").addEventListener("click", revealAnswer);
+  answerArea.innerHTML = `<button class="btn btn-reveal" id="btn-reveal">ヒントを見る</button>`;
+  document.getElementById("btn-reveal").addEventListener("click", showHint);
 
   document.getElementById("grade-bar").classList.add("hidden");
+
+  // 前へボタンの有効/無効
+  document.getElementById("btn-prev").disabled = (currentIndex === 0);
+
+  saveSession();
 }
 
-function revealAnswer() {
-  if (revealed) return;
-  revealed = true;
+// ステージ1：ヒントだけを表示する
+function showHint() {
+  if (revealStage !== 0) return;
+  revealStage = 1;
+  const q = currentQueue[currentIndex];
+
+  const answerArea = document.getElementById("card-answer-area");
+  answerArea.innerHTML = `
+    <div class="card-hint-only"><b>ヒント：</b>${q.hint}</div>
+    <button class="btn btn-reveal" id="btn-reveal-answer">こたえを見る</button>
+  `;
+  document.getElementById("btn-reveal-answer").addEventListener("click", showAnswer);
+}
+
+// ステージ2：正解の漢字・読みを表示する
+function showAnswer() {
+  if (revealStage !== 1) return;
+  revealStage = 2;
   const q = currentQueue[currentIndex];
 
   const [before, after] = q.sentence.split("{blank}");
@@ -208,12 +328,13 @@ function revealAnswer() {
 
 document.querySelectorAll(".grade-btn").forEach(btn => {
   btn.addEventListener("click", () => {
-    if (!revealed) return;
+    if (revealStage !== 2) return;
     const grade = btn.getAttribute("data-grade");
     const q = currentQueue[currentIndex];
     progress[q.id] = grade;
     saveProgress(progress);
-    currentSessionResults.push({ id: q.id, grade });
+    currentSessionResults[q.id] = grade;
+    saveSession();
 
     if (currentIndex < currentQueue.length - 1) {
       currentIndex++;
@@ -224,20 +345,25 @@ document.querySelectorAll(".grade-btn").forEach(btn => {
   });
 });
 
+document.getElementById("btn-prev").addEventListener("click", () => {
+  if (currentIndex === 0) return;
+  currentIndex--;
+  renderCard();
+});
+
 document.getElementById("btn-quiz-back").addEventListener("click", () => {
-  const ok = confirm("クイズを中断してホームにもどりますか？\n（ここまでの結果は保存されています）");
-  if (ok) {
-    renderHome();
-    showScreen("screen-home");
-  }
+  // 途中経過は自動保存済みなので、確認なしでホームへ戻れる
+  renderHome();
+  showScreen("screen-home");
 });
 
 /* ==============================================================
    結果画面
 ============================================================== */
 function showResult() {
+  const grades = Object.values(currentSessionResults);
   const counts = { "○": 0, "△": 0, "✕": 0 };
-  currentSessionResults.forEach(r => counts[r.grade]++);
+  grades.forEach(g => { if (counts[g] !== undefined) counts[g]++; });
 
   const roundsInQueue = [...new Set(currentQueue.map(q => q.round))];
   const label = roundsInQueue.length === 1
@@ -247,7 +373,7 @@ function showResult() {
   document.getElementById("result-sub").textContent = `${label}・全${currentQueue.length}問の結果`;
 
   document.getElementById("result-summary").innerHTML = `
-    <div class="summary-box stat-good" style="background:var(--good-bg);color:var(--good);">
+    <div class="summary-box" style="background:var(--good-bg);color:var(--good);">
       <span class="num">${counts["○"]}</span><span class="lbl">○ わかった</span>
     </div>
     <div class="summary-box" style="background:var(--mid-bg);color:var(--mid);">
@@ -274,14 +400,8 @@ function showResult() {
     listEl.appendChild(row);
   });
 
+  clearSession(); // 最後まで終わったので途中経過は消す
   showScreen("screen-result");
-}
-
-function markStyle(g) {
-  if (g === "○") return "background:var(--good-bg);color:var(--good);";
-  if (g === "△") return "background:var(--mid-bg);color:var(--mid);";
-  if (g === "✕") return "background:var(--bad-bg);color:var(--bad);";
-  return "background:#EFEAE0;color:var(--ink-soft);";
 }
 
 document.getElementById("btn-retry").addEventListener("click", () => {

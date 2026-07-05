@@ -26,6 +26,17 @@
         <p class="app-sub">回を選んでスタート。〇△✕でしっかり復習。</p>
       </header>
 
+      <div class="resume-banner hidden" id="resume-banner">
+        <div class="resume-banner-text">
+          <div class="resume-banner-title" id="resume-banner-title">続きがあります</div>
+          <div class="resume-banner-sub" id="resume-banner-sub">第5回・12 / 25問</div>
+        </div>
+        <div class="resume-banner-actions">
+          <button class="btn-resume" id="btn-resume">続きから</button>
+          <button class="btn-resume-clear" id="btn-resume-clear">やめる</button>
+        </div>
+      </div>
+
       <div class="round-list" id="round-list"><!-- JSで生成 --></div>
 
       <div class="home-actions">
@@ -59,9 +70,13 @@
           </div>
 
           <div class="card-answer-area" id="card-answer-area">
-            <button class="btn btn-reveal" id="btn-reveal">こたえを見る</button>
+            <button class="btn btn-reveal" id="btn-reveal">ヒントを見る</button>
           </div>
         </div>
+      </div>
+
+      <div class="nav-bar" id="nav-bar">
+        <button class="btn-prev" id="btn-prev">‹ 前の問題</button>
       </div>
 
       <div class="grade-bar hidden" id="grade-bar">
