@@ -1,0 +1,500 @@
+/* ==========================================================
+   漢字ポケット — style.css
+   テーマ：ノートと赤ペン（採点の赤字）をモチーフにした
+   和文教材ふうデザイン。iPhone優先、PCでも中央に表示。
+   ========================================================== */
+
+:root {
+  --paper:      #FBF7EE;   /* ノート紙の色 */
+  --paper-line: #E8DFC9;   /* 罫線 */
+  --ink:        #2B2A28;   /* 黒インク文字 */
+  --ink-soft:   #6B6459;   /* サブテキスト */
+  --red:        #C7402C;   /* 採点の赤ペン */
+  --red-deep:   #9E2E1E;
+  --red-soft:   #F3D9CF;
+  --stamp:      #B5442E;   /* 判子色（丸の〇用） */
+  --good:       #3E7D5C;   /* 〇 緑 */
+  --good-bg:    #DFEEE3;
+  --mid:        #C08A1E;   /* △ 黄 */
+  --mid-bg:     #F5E7C9;
+  --bad:        #B0403A;   /* ✕ 赤 */
+  --bad-bg:     #F5DCDA;
+  --card-shadow: 0 18px 40px -18px rgba(43, 42, 40, 0.35);
+  --radius-lg: 28px;
+  --radius-md: 18px;
+  --radius-sm: 12px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #DDD3BC;
+  font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic",
+               "Noto Sans JP", "Helvetica Neue", Arial, sans-serif;
+  color: var(--ink);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* PC表示：スマホ枠っぽく中央配置 */
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 0;
+  background-image:
+    radial-gradient(circle at 20% 10%, rgba(255,255,255,0.5), transparent 40%),
+    repeating-linear-gradient(0deg, transparent, transparent 25px);
+}
+
+.phone {
+  position: relative;
+  width: 100%;
+  max-width: 430px;
+  min-height: 100vh;
+  background: var(--paper);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 33px,
+      var(--paper-line) 34px
+    );
+}
+
+@media (min-width: 431px) {
+  .phone {
+    min-height: 850px;
+    height: 850px;
+    border-radius: 44px;
+    box-shadow: 0 30px 70px -20px rgba(0,0,0,0.5), 0 0 0 10px #1c1c1e;
+  }
+}
+
+/* ステータスバー（見た目だけ） */
+.statusbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 26px 2px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+.statusbar-icons { letter-spacing: 2px; font-size: 8px; opacity: 0.7; }
+
+/* ===================== 画面共通 ===================== */
+.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 22px 26px;
+  overflow-y: auto;
+}
+.hidden { display: none !important; }
+
+.app-header { padding: 10px 2px 18px; flex-shrink: 0; }
+.app-title { display: flex; align-items: baseline; gap: 10px; }
+.app-title-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px; height: 34px;
+  border: 2.5px solid var(--red);
+  border-radius: 8px;
+  color: var(--red);
+  font-size: 14px;
+  font-weight: 900;
+  transform: rotate(-6deg);
+  flex-shrink: 0;
+}
+.app-header h1 {
+  font-size: 24px;
+  margin: 0;
+  letter-spacing: 0.02em;
+  font-weight: 800;
+}
+.app-sub { margin: 8px 0 0; font-size: 13.5px; color: var(--ink-soft); }
+
+.btn {
+  border: none;
+  border-radius: 999px;
+  padding: 15px 20px;
+  font-size: 15.5px;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  font-family: inherit;
+  transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+}
+.btn:active { transform: scale(0.97); }
+
+.btn-primary {
+  background: var(--red);
+  color: #fff;
+  box-shadow: 0 10px 22px -8px rgba(199, 64, 44, 0.55);
+}
+.btn-primary:disabled {
+  background: #cbbfa9; box-shadow: none; cursor: not-allowed;
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-soft);
+  border: 1.5px solid var(--paper-line);
+  margin-top: 10px;
+}
+
+.home-actions { display: flex; flex-direction: column; gap: 0; margin-top: 6px; flex-shrink: 0; }
+.home-footnote {
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* ===================== ホーム：回リスト ===================== */
+.round-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+  flex: 1;
+}
+
+.round-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #fff;
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px -8px rgba(43,42,40,0.25);
+  text-align: left;
+}
+.round-card.selected {
+  border-color: var(--red);
+  background: #FFF8F3;
+}
+.round-card-badge {
+  width: 46px; height: 46px;
+  border-radius: 50%;
+  border: 2.5px solid var(--stamp);
+  color: var(--stamp);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 900;
+  font-size: 13px;
+  flex-shrink: 0;
+  transform: rotate(-4deg);
+}
+.round-card-body { flex: 1; min-width: 0; }
+.round-card-title { font-weight: 800; font-size: 15.5px; }
+.round-card-range { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+.round-card-stats { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.stat-pill {
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.stat-good { background: var(--good-bg); color: var(--good); }
+.stat-mid  { background: var(--mid-bg);  color: var(--mid); }
+.stat-bad  { background: var(--bad-bg);  color: var(--bad); }
+.stat-none { background: #EFEAE0; color: var(--ink-soft); }
+
+.round-card--all {
+  background: linear-gradient(135deg, #2B2A28, #454340);
+  color: #fff;
+}
+.round-card--all .round-card-title { color: #fff; }
+.round-card--all .round-card-range { color: #cfc9bd; }
+.round-card--all .round-card-badge { border-color: #fff; color: #fff; }
+.round-card--all.selected { border-color: var(--red); }
+
+/* ===================== クイズ画面 ===================== */
+.quiz-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 2px 18px;
+  flex-shrink: 0;
+}
+.quiz-header--simple { justify-content: space-between; }
+.review-title { font-size: 17px; font-weight: 800; margin: 0; }
+
+.icon-btn {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: #fff;
+  font-size: 20px;
+  color: var(--ink);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px -4px rgba(0,0,0,0.3);
+}
+
+.quiz-progress { flex: 1; }
+.quiz-progress-track {
+  height: 6px;
+  background: #E8E0D0;
+  border-radius: 99px;
+  overflow: hidden;
+}
+.quiz-progress-fill {
+  height: 100%;
+  background: var(--red);
+  border-radius: 99px;
+  width: 0%;
+  transition: width .35s ease;
+}
+.quiz-progress-text {
+  display: block;
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin-top: 4px;
+  font-weight: 700;
+}
+
+.quiz-round-badge {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--stamp);
+  border: 1.5px solid var(--stamp);
+  border-radius: 999px;
+  padding: 4px 10px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.card-stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 0 18px;
+}
+
+.card {
+  width: 100%;
+  background: #fff;
+  border-radius: var(--radius-lg);
+  padding: 34px 24px 28px;
+  box-shadow: var(--card-shadow);
+  text-align: center;
+  position: relative;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+.card::before {
+  content: "";
+  position: absolute;
+  top: 18px; left: 24px; right: 24px;
+  height: 1px;
+  background: var(--paper-line);
+}
+
+.card-kana {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--ink-soft);
+  background: #F2ECDD;
+  padding: 5px 14px;
+  border-radius: 999px;
+}
+
+.card-sentence {
+  font-size: 22px;
+  line-height: 1.9;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.blank {
+  display: inline-block;
+  min-width: 2.6em;
+  border-bottom: 3px solid var(--ink);
+  color: transparent;
+  user-select: none;
+}
+
+.card-sentence .answer-kanji {
+  color: var(--red);
+  border-bottom: 3px solid var(--red);
+  padding: 0 2px;
+  display: inline-block;
+}
+
+.card-hint {
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  background: var(--paper);
+  border: 1px dashed var(--paper-line);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  line-height: 1.6;
+}
+.card-hint b { color: var(--ink); }
+
+.card-yomi {
+  font-size: 14px;
+  color: var(--stamp);
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.card-answer-area {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.btn-reveal {
+  background: var(--ink);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 13px 26px;
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+.btn-reveal:active { transform: scale(0.96); }
+
+.grade-bar {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+.grade-btn {
+  flex: 1;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 14px 8px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 800;
+}
+.grade-btn:active { transform: scale(0.95); }
+.grade-icon { font-size: 22px; line-height: 1; }
+.grade-label { font-size: 11px; }
+
+.grade-good { background: var(--good-bg); color: var(--good); }
+.grade-mid  { background: var(--mid-bg);  color: var(--mid); }
+.grade-bad  { background: var(--bad-bg);  color: var(--bad); }
+
+/* ===================== 結果画面 ===================== */
+.result-summary {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+  flex-shrink: 0;
+}
+.summary-box {
+  flex: 1;
+  border-radius: var(--radius-md);
+  padding: 16px 8px;
+  text-align: center;
+}
+.summary-box .num { font-size: 26px; font-weight: 900; display: block; }
+.summary-box .lbl { font-size: 11px; font-weight: 700; margin-top: 2px; display: block; }
+
+.result-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  margin-bottom: 14px;
+}
+
+.result-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  box-shadow: 0 2px 8px -6px rgba(0,0,0,0.25);
+}
+.result-row-mark {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 900;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.result-row-body { flex: 1; min-width: 0; }
+.result-row-kana { font-size: 11px; color: var(--ink-soft); font-weight: 700; }
+.result-row-answer { font-size: 16px; font-weight: 800; }
+
+/* ===================== 一覧（見直し）画面 ===================== */
+.review-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 2px 14px;
+  flex-shrink: 0;
+}
+.review-tab {
+  flex-shrink: 0;
+  border: 1.5px solid var(--paper-line);
+  background: #fff;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-family: inherit;
+}
+.review-tab.active {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+}
+
+.review-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.review-empty {
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  padding: 40px 10px;
+  line-height: 1.8;
+}
+
+/* スクロールバー非表示気味に */
+.review-tabs::-webkit-scrollbar,
+.review-list::-webkit-scrollbar,
+.result-list::-webkit-scrollbar,
+.screen::-webkit-scrollbar { width: 0; height: 0; }
