@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>漢字ポケット</title>
+
+<!-- PWA: ホーム画面に追加してアプリのように使うための設定 -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#FBF7EE">
+
+<!-- iOS（Safari）でホーム画面に追加したときの見た目 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="漢字ポケット">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
+<!-- ファビコン -->
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="phone">
+
+    <!-- ステータスバー風 -->
+    <div class="statusbar">
+      <span class="statusbar-time" id="clock">9:41</span>
+      <span class="statusbar-icons">●●●</span>
+    </div>
+
+    <!-- ===================== ホーム画面 ===================== -->
+    <section id="screen-home" class="screen">
+      <header class="app-header">
+        <div class="app-title">
+          <span class="app-title-mark">漢字</span>
+          <h1>漢字ポケット</h1>
+        </div>
+        <p class="app-sub">回を選んでスタート。〇△✕でしっかり復習。</p>
+      </header>
+
+      <div class="resume-banner hidden" id="resume-banner">
+        <div class="resume-banner-text">
+          <div class="resume-banner-title" id="resume-banner-title">続きがあります</div>
+          <div class="resume-banner-sub" id="resume-banner-sub">第5回・12 / 25問</div>
+        </div>
+        <div class="resume-banner-actions">
+          <button class="btn-resume" id="btn-resume">続きから</button>
+          <button class="btn-resume-clear" id="btn-resume-clear">やめる</button>
+        </div>
+      </div>
+
+      <div class="round-list" id="round-list"><!-- JSで生成 --></div>
+
+      <div class="home-actions">
+        <button class="btn btn-primary" id="btn-start">この回をはじめる</button>
+        <button class="btn btn-ghost" id="btn-review">まとめて見直す（一覧）</button>
+      </div>
+
+      <div class="home-footnote">
+        ぜんぶ「すべての回」を選ぶと <b>101問</b> まとめて挑戦できます。
+      </div>
+    </section>
+
+    <!-- ===================== クイズ画面 ===================== -->
+    <section id="screen-quiz" class="screen hidden">
+      <header class="quiz-header">
+        <button class="icon-btn" id="btn-quiz-back" aria-label="もどる">‹</button>
+        <div class="quiz-progress">
+          <div class="quiz-progress-track">
+            <div class="quiz-progress-fill" id="quiz-progress-fill"></div>
+          </div>
+          <span class="quiz-progress-text" id="quiz-progress-text">1 / 26</span>
+        </div>
+        <span class="quiz-round-badge" id="quiz-round-badge">第5回</span>
+      </header>
+
+      <div class="card-stage">
+        <div class="card" id="quiz-card">
+          <div class="card-kana" id="card-kana">ケンバン</div>
+          <div class="card-sentence" id="card-sentence">
+            ピアノの<span class="blank" id="card-blank">＿＿＿＿</span>をたたく。
+          </div>
+
+          <div class="card-answer-area" id="card-answer-area">
+            <button class="btn btn-reveal" id="btn-reveal">ヒントを見る</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-bar" id="nav-bar">
+        <button class="btn-prev" id="btn-prev">‹ 前の問題</button>
+      </div>
+
+      <div class="grade-bar hidden" id="grade-bar">
+        <button class="grade-btn grade-good"  data-grade="○">
+          <span class="grade-icon">○</span><span class="grade-label">わかった</span>
+        </button>
+        <button class="grade-btn grade-mid"   data-grade="△">
+          <span class="grade-icon">△</span><span class="grade-label">あやしい</span>
+        </button>
+        <button class="grade-btn grade-bad"   data-grade="✕">
+          <span class="grade-icon">✕</span><span class="grade-label">わからない</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ===================== 結果画面 ===================== -->
+    <section id="screen-result" class="screen hidden">
+      <header class="app-header">
+        <div class="app-title">
+          <h1 id="result-title">お疲れさま！</h1>
+        </div>
+        <p class="app-sub" id="result-sub">第5回の結果</p>
+      </header>
+
+      <div class="result-summary" id="result-summary"><!-- JSで生成 --></div>
+
+      <div class="result-list" id="result-list"><!-- JSで生成 --></div>
+
+      <div class="home-actions">
+        <button class="btn btn-primary" id="btn-retry">もう一度（順番シャッフル）</button>
+        <button class="btn btn-ghost" id="btn-home-from-result">ホームにもどる</button>
+      </div>
+    </section>
+
+    <!-- ===================== 一覧（見直し）画面 ===================== -->
+    <section id="screen-review" class="screen hidden">
+      <header class="quiz-header quiz-header--simple">
+        <button class="icon-btn" id="btn-review-back" aria-label="もどる">‹</button>
+        <h1 class="review-title">まとめて見直す</h1>
+        <span style="width:32px"></span>
+      </header>
+
+      <div class="review-tabs" id="review-tabs"><!-- JSで生成 --></div>
+
+      <div class="review-list" id="review-list"><!-- JSで生成 --></div>
+    </section>
+
+  </div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+  // PWA: サービスワーカーを登録（オフライン対応・ホーム画面追加用）
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("service-worker.js").catch((err) => {
+        console.error("サービスワーカーの登録に失敗しました", err);
+      });
+    });
+  }
+</script>
+</body>
+</html>
